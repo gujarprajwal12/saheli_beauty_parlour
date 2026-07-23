@@ -232,12 +232,7 @@ var FALLBACK_GALLERY = [
         }
       };
 
-      var overlay = document.createElement('div');
-      overlay.className = 'gallery-card-overlay';
-      overlay.innerHTML = '<div class="gallery-card-tag">View Full Photo</div>';
-
       card.appendChild(img);
-      card.appendChild(overlay);
 
       card.addEventListener('click', function () {
         openLightbox(img.src);
