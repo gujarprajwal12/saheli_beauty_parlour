@@ -26,11 +26,11 @@
       statusText = "Closed • Opens Mon 10 AM";
     }
   } else { // Mon - Sat
-    if (hour >= 10 && hour < 20) {
+    if (hour >= 11 && hour < 19) {
       isOpen = true;
-      statusText = "Open Now • Closes 8 PM";
+      statusText = "Open Now • Closes 7 PM";
     } else {
-      statusText = "Closed • Opens 10 AM";
+      statusText = "Closed • Opens 11 AM";
     }
   }
 
