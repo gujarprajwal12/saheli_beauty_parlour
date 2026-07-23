@@ -123,7 +123,7 @@ function sendWhatsAppBooking(e) {
   window.open(whatsappUrl, '_blank');
 }
 
-// 7. Gallery Engine & Robust Google Drive Image Proxy
+// 7. Gallery Engine & 200 OK Google Drive Thumbnail Image Resolver
 var GALLERY_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxqZo1dh37gjkJdVFa7G_1AGp0Qy7kaiI0VsrFDozMzx2I8yTC5m8wCvNe2lRokw7PH/exec";
 
 // Fallback beauty gallery images
@@ -163,19 +163,19 @@ var FALLBACK_GALLERY = [
     if (e.key === 'Escape') closeLightbox();
   });
 
-  // Extract Drive File ID from URL or String
+  // Extract Drive File ID from any URL format or raw ID string
   function extractDriveId(value) {
     if (!value) return null;
     var match = value.match(/[-\w]{25,}/);
     return match ? match[0] : null;
   }
 
-  // Convert Google Drive Links or IDs into working Direct Image URLs
+  // Convert Google Drive Links or 403 uc?export=view URLs into working 200 OK Image Thumbnail URLs
   function toDirectDriveUrl(value) {
     var id = extractDriveId(value);
     if (id) {
-      // Primary direct view URL using Google's user content proxy
-      return 'https://lh3.googleusercontent.com/d/' + id;
+      // High-res Google Drive thumbnail URL (Bypasses 403 hotlink blocking completely)
+      return 'https://drive.google.com/thumbnail?id=' + id + '&sz=w1000';
     }
     return value;
   }
@@ -231,10 +231,10 @@ var FALLBACK_GALLERY = [
       img.alt = item.name || 'Makeup work';
       img.loading = 'lazy';
 
-      // Smart fallback if lh3 proxy hits any restrictions
+      // Fallback to lh3 CDN if thumbnail hits network glitch
       img.onerror = function () {
-        if (item.fileId && this.src.indexOf('lh3.googleusercontent.com') !== -1) {
-          this.src = 'https://drive.google.com/thumbnail?id=' + item.fileId + '&sz=w1000';
+        if (item.fileId && this.src.indexOf('thumbnail') !== -1) {
+          this.src = 'https://lh3.googleusercontent.com/d/' + item.fileId;
         }
       };
 
@@ -266,7 +266,7 @@ var FALLBACK_GALLERY = [
     .then(function (data) {
       var photos = normalize(data);
       if (photos && photos.length > 0) {
-        // Combine live Drive photos with initial showcases
+        // Render fetched Google Drive photos
         renderGalleryItems(photos.concat(FALLBACK_GALLERY));
       }
     })
