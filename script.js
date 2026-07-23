@@ -101,7 +101,7 @@
   });
 })();
 
-// 6. WhatsApp Appointment Form Builder (Contact Page & Modal)
+// 6. WhatsApp Appointment Form Builder
 function sendWhatsAppBooking(e) {
   if (e) e.preventDefault();
   
@@ -123,15 +123,14 @@ function sendWhatsAppBooking(e) {
   window.open(whatsappUrl, '_blank');
 }
 
-// 7. Gallery Engine & Lightbox Viewer
+// 7. Gallery Engine & Robust Google Drive Image Proxy
 var GALLERY_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxqZo1dh37gjkJdVFa7G_1AGp0Qy7kaiI0VsrFDozMzx2I8yTC5m8wCvNe2lRokw7PH/exec";
 
-// Fallback high quality beauty gallery images when API is loading or offline
+// Fallback beauty gallery images
 var FALLBACK_GALLERY = [
   { url: "images/bridal_hero.jpg", name: "Royal Maharani Bridal Glam", tag: "Bridal Makeup" },
   { url: "images/parlour_salon.jpg", name: "Luxury Hair Salon & Styling", tag: "Hair Cut & Styling" },
-  { url: "images/spa_facial.jpg", name: "Radiant Skin Facial Spa", tag: "Spa & Facial" },
-  { url: "images/bridal_hero.jpg", name: "HD Engagement Party Makeup", tag: "Party Makeup" }
+  { url: "images/spa_facial.jpg", name: "Radiant Skin Facial Spa", tag: "Spa & Facial" }
 ];
 
 (function () {
@@ -164,8 +163,63 @@ var FALLBACK_GALLERY = [
     if (e.key === 'Escape') closeLightbox();
   });
 
+  // Extract Drive File ID from URL or String
+  function extractDriveId(value) {
+    if (!value) return null;
+    var match = value.match(/[-\w]{25,}/);
+    return match ? match[0] : null;
+  }
+
+  // Convert Google Drive Links or IDs into working Direct Image URLs
+  function toDirectDriveUrl(value) {
+    var id = extractDriveId(value);
+    if (id) {
+      // Primary direct view URL using Google's user content proxy
+      return 'https://lh3.googleusercontent.com/d/' + id;
+    }
+    return value;
+  }
+
+  function normalize(data) {
+    var list = [];
+    if (Array.isArray(data)) {
+      list = data;
+    } else if (data && typeof data === 'object') {
+      if (Array.isArray(data.value)) list = data.value;
+      else if (Array.isArray(data.files)) list = data.files;
+      else if (Array.isArray(data.images)) list = data.images;
+      else if (Array.isArray(data.data)) list = data.data;
+      else if (Array.isArray(data.items)) list = data.items;
+      else list = Object.values(data);
+    }
+
+    return list.map(function (item) {
+      if (typeof item === 'string') {
+        var fileId = extractDriveId(item);
+        return {
+          url: toDirectDriveUrl(item),
+          fileId: fileId,
+          name: 'Saheli Makeup Work',
+          tag: 'Bridal & Party Makeup'
+        };
+      }
+      if (item && typeof item === 'object') {
+        var raw = item.id || item.url || item.webContentLink || item.webViewLink || item.link || item.src || item.thumbnailLink;
+        var fileId = item.id || extractDriveId(raw);
+        var title = item.name ? item.name.replace(/\.[^/.]+$/, "") : 'Saheli Makeup Work';
+        return {
+          url: toDirectDriveUrl(raw),
+          fileId: fileId,
+          name: title,
+          tag: 'Bridal & Party Makeup'
+        };
+      }
+      return null;
+    }).filter(function (x) { return x && x.url; });
+  }
+
   function renderGalleryItems(items) {
-    if (state) state.remove();
+    if (state) state.style.display = 'none';
     grid.innerHTML = '';
 
     items.forEach(function (item) {
@@ -177,6 +231,13 @@ var FALLBACK_GALLERY = [
       img.alt = item.name || 'Makeup work';
       img.loading = 'lazy';
 
+      // Smart fallback if lh3 proxy hits any restrictions
+      img.onerror = function () {
+        if (item.fileId && this.src.indexOf('lh3.googleusercontent.com') !== -1) {
+          this.src = 'https://drive.google.com/thumbnail?id=' + item.fileId + '&sz=w1000';
+        }
+      };
+
       var overlay = document.createElement('div');
       overlay.className = 'gallery-card-overlay';
       overlay.innerHTML = '<div class="gallery-card-title">' + (item.name || 'Saheli Makeup') + '</div>' +
@@ -186,32 +247,27 @@ var FALLBACK_GALLERY = [
       card.appendChild(overlay);
 
       card.addEventListener('click', function () {
-        openLightbox(item.url, item.name);
+        openLightbox(img.src, item.name);
       });
 
       grid.appendChild(card);
     });
   }
 
-  // Render fallbacks immediately for instant visual gratification
+  // Render local fallback cards immediately so gallery is never empty
   renderGalleryItems(FALLBACK_GALLERY);
 
   // Fetch live photos from Google Apps Script (Drive)
   fetch(GALLERY_SCRIPT_URL)
     .then(function (res) {
-      if (!res.ok) throw new Error('Request failed');
+      if (!res.ok) throw new Error('HTTP error ' + res.status);
       return res.json();
     })
     .then(function (data) {
-      var list = Array.isArray(data) ? data : (data.files || data.images || data.data || []);
-      if (list && list.length) {
-        var parsed = list.map(function (item) {
-          if (typeof item === 'string') return { url: item, name: 'Bridal Work', tag: 'Makeup Work' };
-          var url = item.url || item.webContentLink || item.webViewLink || item.thumbnailLink;
-          return { url: url, name: item.name || 'Bridal Work', tag: 'Gallery' };
-        }).filter(function (x) { return x.url; });
-
-        if (parsed.length) renderGalleryItems(parsed);
+      var photos = normalize(data);
+      if (photos && photos.length > 0) {
+        // Combine live Drive photos with initial showcases
+        renderGalleryItems(photos.concat(FALLBACK_GALLERY));
       }
     })
     .catch(function (err) {
