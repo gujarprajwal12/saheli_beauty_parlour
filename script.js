@@ -128,9 +128,9 @@ var GALLERY_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxqZo1dh37gjkJ
 
 // Fallback beauty gallery images
 var FALLBACK_GALLERY = [
-  { url: "images/bridal_hero.jpg", name: "Royal Maharani Bridal Glam", tag: "Bridal Makeup" },
-  { url: "images/parlour_salon.jpg", name: "Luxury Hair Salon & Styling", tag: "Hair Cut & Styling" },
-  { url: "images/spa_facial.jpg", name: "Radiant Skin Facial Spa", tag: "Spa & Facial" }
+  { url: "images/bridal_hero.jpg" },
+  { url: "images/parlour_salon.jpg" },
+  { url: "images/spa_facial.jpg" }
 ];
 
 (function () {
@@ -142,9 +142,9 @@ var FALLBACK_GALLERY = [
   var lightboxImg = document.getElementById('lightboxImg');
   var lightboxClose = document.getElementById('lightboxClose');
 
-  function openLightbox(src, title) {
+  function openLightbox(src) {
     lightboxImg.src = src;
-    lightboxImg.alt = title || 'Saheli Beauty Parlour';
+    lightboxImg.alt = 'Saheli Beauty & Bridal Studio Work';
     lightbox.hidden = false;
   }
 
@@ -174,7 +174,6 @@ var FALLBACK_GALLERY = [
   function toDirectDriveUrl(value) {
     var id = extractDriveId(value);
     if (id) {
-      // High-res Google Drive thumbnail URL (Bypasses 403 hotlink blocking completely)
       return 'https://drive.google.com/thumbnail?id=' + id + '&sz=w1000';
     }
     return value;
@@ -198,20 +197,15 @@ var FALLBACK_GALLERY = [
         var fileId = extractDriveId(item);
         return {
           url: toDirectDriveUrl(item),
-          fileId: fileId,
-          name: 'Saheli Makeup Work',
-          tag: 'Bridal & Party Makeup'
+          fileId: fileId
         };
       }
       if (item && typeof item === 'object') {
         var raw = item.id || item.url || item.webContentLink || item.webViewLink || item.link || item.src || item.thumbnailLink;
         var fileId = item.id || extractDriveId(raw);
-        var title = item.name ? item.name.replace(/\.[^/.]+$/, "") : 'Saheli Makeup Work';
         return {
           url: toDirectDriveUrl(raw),
-          fileId: fileId,
-          name: title,
-          tag: 'Bridal & Party Makeup'
+          fileId: fileId
         };
       }
       return null;
@@ -228,7 +222,7 @@ var FALLBACK_GALLERY = [
 
       var img = document.createElement('img');
       img.src = item.url;
-      img.alt = item.name || 'Makeup work';
+      img.alt = 'Saheli Beauty Work';
       img.loading = 'lazy';
 
       // Fallback to lh3 CDN if thumbnail hits network glitch
@@ -240,14 +234,13 @@ var FALLBACK_GALLERY = [
 
       var overlay = document.createElement('div');
       overlay.className = 'gallery-card-overlay';
-      overlay.innerHTML = '<div class="gallery-card-title">' + (item.name || 'Saheli Makeup') + '</div>' +
-                          '<div class="gallery-card-tag">' + (item.tag || 'Bridal & Beauty') + '</div>';
+      overlay.innerHTML = '<div class="gallery-card-tag">View Full Photo</div>';
 
       card.appendChild(img);
       card.appendChild(overlay);
 
       card.addEventListener('click', function () {
-        openLightbox(img.src, item.name);
+        openLightbox(img.src);
       });
 
       grid.appendChild(card);
@@ -266,7 +259,7 @@ var FALLBACK_GALLERY = [
     .then(function (data) {
       var photos = normalize(data);
       if (photos && photos.length > 0) {
-        // Render fetched Google Drive photos
+        // Render fetched Google Drive photos cleanly without file names
         renderGalleryItems(photos.concat(FALLBACK_GALLERY));
       }
     })
